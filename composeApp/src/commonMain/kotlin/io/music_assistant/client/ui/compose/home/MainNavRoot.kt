@@ -413,7 +413,7 @@ fun MainNavigationRoot(
         val chapterProgressEnabled by homeScreenViewModel.chapterProgressEnabled.collectAsStateWithLifecycle()
         val playbackItems = playingPlayer?.let { player ->
             // The same rules as the buttons in the player: Stop for streams that cannot pause,
-            // dimmed buttons when the queue cannot play or skip, and a cancel while play is pending.
+            // next from the source flag on its own, and a cancel while play is pending.
             val transport = player.transportState(chapterProgressEnabled)
             val main = player.mainTransport()
             listOf(
@@ -424,7 +424,7 @@ fun MainNavigationRoot(
                     label = stringResource(main.button.label),
                 ),
                 PlaybackItem(
-                    enabled = transport.playerEnabled && transport.buttonsEnabled && transport.skipForwardEnabled,
+                    enabled = transport.nextEnabled,
                     onClick = { homeScreenViewModel.playerAction(player, PlayerAction.Next) },
                     icon = SkipForwardIcon,
                     label = stringResource(Res.string.media_action_next),

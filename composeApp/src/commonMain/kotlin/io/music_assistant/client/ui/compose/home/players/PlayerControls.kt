@@ -76,7 +76,6 @@ fun PlayerControls(
     val isLongForm = queue?.currentItem?.track.isLongFormSpokenContent
     // A live input never ends, so shuffle and repeat have nothing to act on.
     val isLiveInput = queue?.currentItem?.track is AudioSource
-    val skipForwardEnabled = transport.skipForwardEnabled
     val smallButtonSize = (mainButtonSize.value * 0.6).dp
     Row(
         modifier = modifier
@@ -171,7 +170,7 @@ fun PlayerControls(
                 icon = SkipForwardIcon,
                 tint = tint,
                 size = smallButtonSize,
-                enabled = playerEnabled && buttonsEnabled && skipForwardEnabled,
+                enabled = transport.nextEnabled,
             ) { playerAction(playerData, PlayerAction.Next) }
         }
 
@@ -274,6 +273,8 @@ internal class TransportState(
     // Like the web app, Stop stays available while playing even if the item is not playable.
     val showStop: Boolean,
     val skipForwardEnabled: Boolean,
+    /** Next follows the source flag on its own. Pause is not required. Off during an announcement. */
+    val nextEnabled: Boolean,
 )
 
 internal fun PlayerData.transportState(chapterProgressEnabled: Boolean): TransportState {
@@ -300,6 +301,7 @@ internal fun PlayerData.transportState(chapterProgressEnabled: Boolean): Transpo
         buttonsEnabled = sourceCommand.canPlayPause,
         showStop = player.isPlaying && !canPauseContent,
         skipForwardEnabled = skipForwardEnabled,
+        nextEnabled = !player.isAnnouncing && skipForwardEnabled,
     )
 }
 
@@ -335,7 +337,7 @@ internal class MainTransport(val button: MainButton, val action: PlayerAction, v
  * and Pause (a cancel) while a play request is pending.
  */
 internal fun PlayerData.mainTransport(): MainTransport {
-    // The main button does not read skipForwardEnabled, the only value that the flag changes.
+    // The main button does not read next. The chapter flag only changes next.
     val transport = transportState(chapterProgressEnabled = false)
     val pending = pendingPlay && !player.isPlaying
     return MainTransport(

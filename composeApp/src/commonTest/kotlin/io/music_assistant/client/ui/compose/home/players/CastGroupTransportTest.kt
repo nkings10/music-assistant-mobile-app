@@ -18,6 +18,7 @@ class CastGroupTransportTest {
         assertTrue(transport.playerEnabled)
         assertTrue(transport.buttonsEnabled)
         assertTrue(transport.skipForwardEnabled)
+        assertTrue(transport.nextEnabled)
         assertTrue(group.mainTransport().enabled)
     }
 
@@ -28,6 +29,25 @@ class CastGroupTransportTest {
 
         assertFalse(transport.buttonsEnabled)
         assertFalse(transport.skipForwardEnabled)
+        assertFalse(transport.nextEnabled)
+    }
+
+    @Test
+    fun `next stays on when the source can skip and cannot pause`() {
+        val transport = castGroup(canPlayPause = false, canNextPrevious = true)
+            .transportState(chapterProgressEnabled = false)
+
+        assertFalse(transport.buttonsEnabled)
+        assertTrue(transport.nextEnabled)
+    }
+
+    @Test
+    fun `next stays off during an announcement`() {
+        val group = castGroup(canPlayPause = true, canNextPrevious = true)
+        val transport = group.copy(player = group.player.copy(isAnnouncing = true))
+            .transportState(chapterProgressEnabled = false)
+
+        assertFalse(transport.nextEnabled)
     }
 
     private fun castGroup(canPlayPause: Boolean, canNextPrevious: Boolean) =
