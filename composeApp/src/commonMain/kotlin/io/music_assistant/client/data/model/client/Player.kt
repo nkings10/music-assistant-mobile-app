@@ -2,6 +2,14 @@ package io.music_assistant.client.data.model.client
 
 import io.music_assistant.client.data.model.server.SleepTimerMode
 
+/** A source a player can be on. The web app enables pause and next from these flags. */
+data class PlaybackSource(
+    val id: String,
+    val passive: Boolean,
+    val canPlayPause: Boolean,
+    val canNextPrevious: Boolean,
+)
+
 data class Player(
     val id: String,
     val name: String,
@@ -40,6 +48,10 @@ data class Player(
      * end-of-content mode, [sleepTimerExpiresAt] is an estimate, and null while paused.
      */
     val sleepTimerMode: SleepTimerMode? = null,
+    /** The source the server says is playing. Null when nothing else has taken the player. */
+    val activeSource: String? = null,
+    val sources: List<PlaybackSource> = emptyList(),
+    val isPaused: Boolean = false,
 ) {
     /**
      * The player is there but asleep. Two server states look identical to the user — a

@@ -284,19 +284,40 @@ internal fun PlayerData.transportState(chapterProgressEnabled: Boolean): Transpo
     val elapsedSec = queue?.elapsedTime ?: 0.0
     val hasUpcomingChapter = chapterProgressEnabled &&
         queue?.currentItem?.track.navigationChapters()?.any { it.start > elapsedSec } == true
+    // The web app enables pause and next from the playing source. A missing source entry
+    // falls back to the queue having items, or to the current item being playable.
+    val sourceCommand = sourceCommand()
     val skipForwardEnabled = when {
-        queue?.currentIndex?.let { it < itemsCount - 1 } == true -> true
         hasUpcomingChapter -> true
+        sourceCommand.canNext != null -> sourceCommand.canNext
+        queue?.currentIndex?.let { it < itemsCount - 1 } == true -> true
         // Chapterless/last-chapter fallback: an in-progress audiobook still takes a plain next.
         (queue?.currentItem?.track as? Audiobook)?.let { it.fullyPlayed == false } == true -> true
         else -> false
     }
     return TransportState(
-        playerEnabled = player.canPlay && !player.isAnnouncing,
-        buttonsEnabled = queue?.currentItem?.isPlayable == true,
+        playerEnabled = (player.canPlay || sourceCommand.canPlayPause) && !player.isAnnouncing,
+        buttonsEnabled = sourceCommand.canPlayPause,
         showStop = player.isPlaying && !canPauseContent,
         skipForwardEnabled = skipForwardEnabled,
     )
+}
+
+private data class SourceCommand(val canPlayPause: Boolean, val canNext: Boolean?)
+
+/** Pause and next as the web app decides them from the playing source. */
+private fun PlayerData.sourceCommand(): SourceCommand {
+    val audioSource = queueInfo?.currentItem?.track as? AudioSource
+    if (audioSource != null) return SourceCommand(audioSource.canPlayPause, null)
+    val sourceId = player.activeSource ?: player.id
+    player.sources.find { it.id == sourceId }?.let { source ->
+        val stopped = !player.isPlaying && !player.isPaused
+        val canRestart = !source.passive && source.id != player.id && stopped
+        return SourceCommand(source.canPlayPause || canRestart, source.canNextPrevious)
+    }
+    val hasItems = (queueInfo?.itemCount ?: queueItems?.size ?: 0) > 0
+    val itemPlayable = queueInfo?.currentItem?.isPlayable == true
+    return SourceCommand(hasItems || itemPlayable, null)
 }
 
 /** The look of the main transport button. */

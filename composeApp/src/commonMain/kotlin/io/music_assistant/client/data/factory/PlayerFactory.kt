@@ -2,6 +2,7 @@ package io.music_assistant.client.data.factory
 
 import io.music_assistant.client.api.ServiceClient
 import io.music_assistant.client.data.model.client.MediaType
+import io.music_assistant.client.data.model.client.PlaybackSource
 import io.music_assistant.client.data.model.client.Player
 import io.music_assistant.client.data.model.client.PlayerMedia
 import io.music_assistant.client.data.model.client.PlayerType
@@ -41,6 +42,18 @@ class PlayerFactory(
             canMute = supportedFeatures.contains(PlayerFeature.VOLUME_MUTE) && muteControl != null && muteControl != PLAYER_CONTROL_NONE,
             queueId = activeSource ?: currentMedia?.sourceId,
             isPlaying = state == PlayerState.PLAYING,
+            isPaused = state == PlayerState.PAUSED,
+            activeSource = activeSource,
+            sources = sourceList.mapNotNull { source ->
+                source.id.takeIf { it.isNotEmpty() }?.let { id ->
+                    PlaybackSource(
+                        id = id,
+                        passive = source.passive,
+                        canPlayPause = source.canPlayPause,
+                        canNextPrevious = source.canNextPrevious,
+                    )
+                }
+            },
             isAnnouncing = announcementInProgress == true,
             canGroupWith = canGroupWith,
             groupMembers = groupMembers,
